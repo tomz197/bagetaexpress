@@ -17,37 +17,6 @@ import { eq, and, sql, or } from "drizzle-orm";
 import { getDate } from "@/lib/utils";
 import { cache } from "react";
 
-async function getOrderByPin(
-  pin: Order["pin"],
-  schoolId?: School["id"],
-  status: Order["status"] = "ordered",
-): Promise<Order | null> {
-  let orders: Order[];
-
-  if (schoolId) {
-    orders = (
-      await db
-        .select({ order })
-        .from(order)
-        .innerJoin(customer, eq(order.userId, customer.userId))
-        .where(
-          and(
-            eq(order.pin, pin),
-            eq(order.status, status),
-            eq(customer.schoolId, schoolId),
-          ),
-        )
-    ).map((row) => row.order);
-  } else {
-    orders = await db
-      .select()
-      .from(order)
-      .where(and(eq(order.pin, pin), eq(order.status, status)));
-  }
-
-  return orders[0] ?? null;
-}
-
 const getActiveOrder = cache(
   async (userId: Order["userId"]): Promise<Order | null> => {
     const [found] = await db
@@ -117,12 +86,3 @@ async function blockUnpickedOrders(schoolId: School["id"]): Promise<void> {
       sql`status = "ordered" AND user_id IN (SELECT user_id FROM customer WHERE school_id = ${schoolId})`,
     );
 }
-
-export {
-  getOrderByPin,
-  getOrdersBySchoolId,
-  updateOrderStatus,
-  blockUnpickedOrders,
-  getFirstOrderItemClose,
-  getActiveOrder,
-};
